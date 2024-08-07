@@ -8,11 +8,60 @@ using the new [inferPtychoNNImageProcessor.py](inferPtychoNNImageProcessor.py) p
 file. Other files related to streaming ([pvaClient.py](pvaClient.py) and [adSimServer.py](adSimServer.py)) 
 are also not needed, which reduces the code base by about 40%.
 
-Steps to run the code. 
+## Environment Setup
 
-1. In one terminal run the adSimServer.py, which will simulate a detector with either a random 128x128 images or from a presaved scan file (scan810.npy) 
-   python3 adSimServer.py -if diff_scan_810.npy -fps 10
-   
-   fps is the frame rate and the maximum possible frame rate with real-time feedback is 2000.
-   
-2. Open another terminal and run the main-batch-test.py 
+* Prepare your environment by installing conda and the required packages:
+
+```sh
+$ conda create -n PtychoNN
+$ conda activate PtychoNN
+(PtychoNN) $ conda install python=3.9
+(PtychoNN) $ pip install nvidia-pyindex
+(PtychoNN) $ pip install nvidia-tensorrt
+(PtychoNN) $ pip install torch-summary
+(PtychoNN) $ conda install -c conda-forge pycuda
+(PtychoNN) $ conda install -c pytorch pytorch torchvision
+(PtychoNN) $ conda install -c epics pvapy
+```
+
+* Checkout git repo:
+
+```sh
+(PtychoNN) $ git clone https://github.com/sveseli/edgePtychoNN.git
+```
+## Demo Steps
+
+* In Terminal 1, start processing consumers:
+
+```sh
+(PtychoNN) $ cd edgePtychoNN
+(PtychoNN) $ export PYTHONPATH=$PWD
+(PtychoNN) $ pvapy-hpc-consumer --input-channel ad:image --control-channel inference:*:control --status-channel inference:*:status --output-channel inference:*:output --processor-file inferPtychoNNImageProcessor.py --processor-class InferPtychoNNImageProcessor --report-period 10 --server-queue-size 100 --n-consumers 4 --distributor-updates 8
+```
+
+The above command should start 4 instances of inference engine running
+on machine's GPUs. Each application instance will be receiving images from the
+'ad:image' PVA channel in the batches of 8: the first one will receive
+frames [1-8,33-40,...], the second one will receive frames [9-16,41-48,...], the third one will receive frames [17-24,49-56,...], and the fourth one will be getting frames [25-32,57-64,...]. This is controlled by the '--distributor-updates' options in the above command.
+
+* In Terminal 2, start AD sim server:
+
+```sh
+(PtychoNN) $ pvapy-ad-sim-server -cn ad:image -nx 128 -ny 128 -dt int16 -fps 8000 -rt 60 -rp 8000
+```
+
+The above will stream random images on the channel 'ad:image'.
+Alternatively, stream included example scan from the 'data' folder:
+
+```sh
+(PtychoNN) $ pvapy-ad-sim-server -cn ad:image -if data/scan674.npy -fps 8000 -rt 60 -rp 8000
+```
+
+The above will stream random images on the channel 'ad:image'.
+
+
+* In Terminal 3, observe stats:
+
+```sh
+$ watch -d 'nvidia-smi | tail -12'
+```

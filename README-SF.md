@@ -3,10 +3,10 @@
 PtychoNN code does real-time inference using NVIDIA Jetson AGX Xavier Developer kit on the diffraction patterns streamed out from the X-ray detector. The images are streamed out to the Jetson as PVA stream and fed into the inference engine using TensorRT Python API. The embedded GPU system will then perform the inference and sends back the inference outputs as PVA stream to the user interface for viewing. The inference is done in batch processing with a batch size of 8 during the demonstration. 
 
 The original code has been converted to use PvaPy Streaming Framework
-using the new [inferPtychoNNImageProcessor.py] processor file and
-[inferPtychoNNEngine.py] which replaces existing [inferPtychoNN.py]
-file. Other files related to streaming ([pvaClient.py] and [adSimServer.py]) 
-are also not needed.
+using the new [inferPtychoNNImageProcessor.py](inferPtychoNNImageProcessor.py) processor file and
+[inferPtychoNNEngine.py](inferPtychoNNEngine.py) which replaces existing [inferPtychoNN.py](inferPtychoNN.py)
+file. Other files related to streaming ([pvaClient.py](pvaClient.py) and [adSimServer.py](adSimServer.py)) 
+are also not needed, which reduces the code base by about 40%.
 
 Steps to run the code. 
 
